@@ -1,9 +1,6 @@
 import sys
 import re
 
-f = open(sys.argv[1], "r")
-lines = f.read().splitlines()
-
 
 def parse_stack_line(line):
     vals = []
@@ -39,6 +36,26 @@ def parse_input(lines):
     return Input(stacks, moves)
 
 
+f = open(sys.argv[1], "r")
+lines = f.read().splitlines()
 input = parse_input(lines)
-print(input.stacks)
-print(input.moves)
+
+stacks = [[] for x in input.stacks[0]]
+for stack in input.stacks:
+    for i in range(0, len(input.stacks[0])):
+        crate = stack[i]
+        if crate != "":
+            stacks[i].insert(0, crate)
+
+for move in input.moves:
+    origin_idx = move[1] - 1
+    target_idx = move[2] - 1
+    quantity = move[0]
+    for i in range(0, quantity):
+        crate = stacks[origin_idx].pop()
+        stacks[target_idx].append(crate)
+
+message = ""
+for stack in stacks:
+    message += stack.pop()
+print(message)
