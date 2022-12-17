@@ -1,5 +1,12 @@
 import sys
 
+DEBUG = False
+
+
+def debug(*args):
+    if DEBUG:
+        print(*args)
+
 
 class CircularQueue:
 
@@ -67,8 +74,8 @@ class Grid:
 
     def print(self):
         for row in self.grid:
-            print("".join(row))
-        print()
+            debug("".join(row))
+        debug()
 
     def print_rock(self, rock, pos):
         for y in range(len(self.grid)):
@@ -78,8 +85,8 @@ class Grid:
                     str += "@"
                 else:
                     str += self.grid[y][x]
-            print(str)
-        print()
+            debug(str)
+        debug()
 
 
 DIR_DOWN = Point(0, 1)
@@ -89,6 +96,13 @@ DIRS = {
     "<": Point(-1, 0),
     "^": Point(0, -1),
     "v": DIR_DOWN
+}
+
+DIR_NAMES = {
+    "right": Point(1, 0),
+    "left": Point(-1, 0),
+    "up": Point(0, -1),
+    "down": DIR_DOWN
 }
 
 ROCKS = [
@@ -130,35 +144,47 @@ directions = CircularQueue([DIRS[dir] for dir in f.read().strip()])
 rocks = CircularQueue(ROCKS)
 
 grid = Grid(CHAMBER_WIDTH, 0)
-for rock_num in range(3):
+for rock_num in range(NUM_ROCKS):
     rock = rocks.next()
     pos = ROCK_START_POS
     rock_grid = Grid(CHAMBER_WIDTH, len(rock) + ROCK_START_GAP)
     grid.grid = rock_grid.grid + grid.grid
+
+    debug("The first rock begins falling:")
+    grid.print_rock(rock, pos)
+
     while True:
-        grid.print_rock(rock, pos)
-        dir_is_unmovable_down = directions.peek(
-        ) == DIR_DOWN and not can_move_dir(grid, rock, pos, DIR_DOWN)
-        if dir_is_unmovable_down:
-            print("Can't pull over any further!")
-            break
+        next_dir_name = next(
+            k for k, v in DIR_NAMES.items() if v == directions.peek())
         if can_move_dir(grid, rock, pos, directions.peek()):
-            print("Dir is", directions.peek(), "and can move")
             pos = pos.translate(directions.next())
+
+            dir = directions.peek()
+            debug("Jet of gas pushes rock", next_dir_name, ":")
+            grid.print_rock(rock, pos)
+
+        else:
+            directions.next()
+            debug("Jet of gas pushes rock",
+                  next_dir_name, "but nothing happens:")
+            grid.print_rock(rock, pos)
+
         if can_move_dir(grid, rock, pos, DIR_DOWN):
             pos = pos.translate(DIR_DOWN)
+            debug("Rock falls 1 unit:")
+            grid.print_rock(rock, pos)
         else:
-            print("Rock can't fall one down, stopping")
+            debug("Rock falls 1 unit, causing it to come to rest:")
             break
-    grid.print_rock(rock, pos)
+
     # commit the rock to the grid
     for y in range(len(rock)):
         for x in range(len(rock[y])):
             if rock[y][x] == "#":
                 grid.set(pos.x + x, pos.y + y, "#")
+
     grid.trim()
-    print("Comitted rock to grid")
     grid.print()
 
-    # Notes:
-    # - Collision can be detected if subset of shape is covering subset of grid
+
+print(grid.height())
